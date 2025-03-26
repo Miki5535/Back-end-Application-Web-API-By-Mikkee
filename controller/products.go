@@ -17,6 +17,7 @@ func ProductsController(router *gin.Engine) {
 		routes.PUT("/:id", updateProduct)
 		routes.DELETE("/:id", deleteProduct)
 		routes.POST("/addProductToCart", addProductToCart)
+		routes.GET("/search", searchProducts)
 	}
 }
 
@@ -177,4 +178,51 @@ func addProductToCart(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"message": "Product added to cart successfully"})
+}
+
+func searchProducts(c *gin.Context) {
+	// ดึง query parameters จาก URL
+	keyword := c.Query("keyword")
+	minPrice := c.Query("minPrice")
+	maxPrice := c.Query("maxPrice")
+
+	// สร้าง query เริ่มต้น
+	query := DB.Model(&model.Product{})
+
+	// ถ้ามี keyword ให้ค้นหาใน ProductName และ Description
+	if keyword != "" {
+		query = query.Where("product_name LIKE ? OR description LIKE ?",
+			"%"+keyword+"%", "%"+keyword+"%")
+	}
+
+	// ถ้ามี minPrice ให้เพิ่มเงื่อนไขราคาขั้นต่ำ
+	if minPrice != "" {
+		query = query.Where("price >= ?", minPrice)
+	}
+
+	// ถ้ามี maxPrice ให้เพิ่มเงื่อนไขราคาขั้นสูง
+	if maxPrice != "" {
+		query = query.Where("price <= ?", maxPrice)
+	}
+
+	var products []model.Product
+	if err := query.Find(&products).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to search products"})
+		return
+	}
+
+	// แปลงเป็น DTO
+	var productDTOs []dto.ProductDTO
+	for _, product := range products {
+		productDTO := dto.ProductDTO{
+			ProductID:     product.ProductID,
+			ProductName:   product.ProductName,
+			Description:   product.Description,
+			Price:         product.Price,
+			StockQuantity: product.StockQuantity,
+		}
+		productDTOs = append(productDTOs, productDTO)
+	}
+
+	c.JSON(200, productDTOs)
 }

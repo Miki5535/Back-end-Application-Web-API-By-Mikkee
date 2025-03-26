@@ -31,4 +31,7 @@ http://localhost:8080/customers/profile/repassword
 
 
 
+GET
+http://localhost:8080/products/search?keyword=Beer&minPrice=0&maxPrice=4
+
 

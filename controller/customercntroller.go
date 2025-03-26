@@ -56,10 +56,8 @@ func createCustomer(c *gin.Context) {
 }
 
 func loginCustomer(c *gin.Context) {
-	var input struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	var input dto.LoginRequest // Using the LoginRequest DTO
+
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(400, gin.H{"error": "Invalid input"})
 		return
@@ -76,17 +74,21 @@ func loginCustomer(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"message": "Login successful",
-		"customer": gin.H{
-			"id":          customer.CustomerID,
-			"PhoneNumber": customer.PhoneNumber,
-			"FirstName":   customer.FirstName,
-			"LastName":    customer.LastName,
-			"email":       customer.Email,
-			"address":     customer.Address,
+	// Preparing the response using the LoginResponse DTO
+	response := dto.LoginResponse{
+		Message: "Login successful",
+		Customer: dto.CustomerResponse{
+			ID:          customer.CustomerID,
+			PhoneNumber: customer.PhoneNumber,
+			FirstName:   customer.FirstName,
+			LastName:    customer.LastName,
+			Email:       customer.Email,
+			Address:     customer.Address,
 		},
-	})
+	}
+
+	// Send the response back as JSON
+	c.JSON(200, response)
 }
 
 func Repass(c *gin.Context) {
