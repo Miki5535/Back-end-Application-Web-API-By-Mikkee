@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	model "go-test-grom-by-mikkee/models"
 	"strconv"
 
@@ -203,6 +204,7 @@ func getCarts(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Missing customer_id"})
 		return
 	}
+
 	// แปลง customer_id เป็น integer
 	customerIDInt, err := strconv.Atoi(customerID)
 	if err != nil {
@@ -210,20 +212,35 @@ func getCarts(c *gin.Context) {
 		return
 	}
 
-	// ดึงข้อมูลรถเข็นทั้งหมดของลูกค้า พร้อมกับข้อมูลลูกค้าและรายการสินค้า
+	// ดึงข้อมูลรถเข็นทั้งหมดของลูกค้า พร้อมกับข้อมูลรายการสินค้า
 	var carts []model.Cart
-	if err := DB.Preload("Items.Product").Where("customer_id = ?", customerIDInt).Find(&carts).Error; err != nil {
+	if err := DB.Preload("Items").Where("customer_id = ?", customerIDInt).Find(&carts).Error; err != nil {
 		c.JSON(500, gin.H{"error": "Failed to fetch carts"})
 		return
+	}
+
+	// ดึงข้อมูลสินค้าทั้งหมดเพื่อลดจำนวนการ query ฐานข้อมูล
+	var products []model.Product
+	if err := DB.Find(&products).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch products"})
+		return
+	}
+
+	// สร้าง map เพื่อค้นหาสินค้าตาม ID
+	productMap := make(map[int]model.Product)
+	for _, product := range products {
+		productMap[product.ProductID] = product
 	}
 
 	// สร้างโครงสร้างข้อมูลสำหรับ response
 	type CartItemResponse struct {
 		ProductID    int     `json:"product_id"`
 		ProductName  string  `json:"product_name"`
+		Description  string  `json:"description,omitempty"`
 		Quantity     int     `json:"quantity"`
 		PricePerUnit float64 `json:"price_per_unit"`
 		TotalPrice   float64 `json:"total_price"`
+		// Available    bool    `json:"available"`
 	}
 	type CartResponse struct {
 		CartID int                `json:"cart_id"`
@@ -235,19 +252,32 @@ func getCarts(c *gin.Context) {
 	for _, cart := range carts {
 		var items []CartItemResponse
 		for _, item := range cart.Items {
-			// ตรวจสอบว่ามีข้อมูลสินค้าหรือไม่
-			if item.ProductID == 0 || item.Product.ProductID == 0 {
-				continue // ข้ามรายการที่ไม่มีข้อมูลสินค้า
+			// ค้นหาสินค้าใน map
+			product, exists := productMap[item.ProductID]
+
+			responseItem := CartItemResponse{
+				ProductID: item.ProductID,
+				Quantity:  item.Quantity,
 			}
 
-			product := item.Product
-			items = append(items, CartItemResponse{
-				ProductID:    product.ProductID,
-				ProductName:  product.ProductName,
-				Quantity:     item.Quantity,
-				PricePerUnit: product.Price,
-				TotalPrice:   float64(item.Quantity) * product.Price,
-			})
+			if exists {
+				responseItem.ProductName = product.ProductName
+				responseItem.Description = product.Description
+				responseItem.PricePerUnit = product.Price
+				// responseItem.TotalPrice = float64(item.Quantity) * product.Price
+				totalPrice := float64(item.Quantity) * product.Price
+				formatted, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", totalPrice), 64)
+				responseItem.TotalPrice = formatted
+				// responseItem.Available = true
+			} else {
+				responseItem.ProductName = "Unknown Product (ID: " + strconv.Itoa(item.ProductID) + ")"
+				responseItem.Description = "This product is no longer available"
+				responseItem.PricePerUnit = 0
+				responseItem.TotalPrice = 0
+				// responseItem.Available = false
+			}
+
+			items = append(items, responseItem)
 		}
 
 		cartResponses = append(cartResponses, CartResponse{
