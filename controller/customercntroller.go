@@ -2,6 +2,7 @@ package controller
 
 import (
 	model "go-test-grom-by-mikkee/models"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -18,6 +19,7 @@ func CustomerController(router *gin.Engine) {
 		routes.GET("/profile", getCustomerProfile)
 		routes.PUT("/profile/address", updateCustomerAddress)
 		routes.PUT("/profile/repassword", Repass)
+		routes.GET("/getCarts", getCarts)
 	}
 }
 
@@ -75,10 +77,12 @@ func loginCustomer(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "Login successful",
 		"customer": gin.H{
-			"id":      customer.CustomerID,
-			"name":    customer.FirstName,
-			"email":   customer.Email,
-			"address": customer.Address,
+			"id":          customer.CustomerID,
+			"PhoneNumber": customer.PhoneNumber,
+			"FirstName":   customer.FirstName,
+			"LastName":    customer.LastName,
+			"email":       customer.Email,
+			"address":     customer.Address,
 		},
 	})
 }
@@ -190,4 +194,69 @@ func deleteCustomer(c *gin.Context) {
 		return
 	}
 	c.JSON(200, gin.H{"message": "Customer deleted successfully"})
+}
+
+func getCarts(c *gin.Context) {
+	// รับ customer_id จาก query parameter
+	customerID := c.Query("customer_id")
+	if customerID == "" {
+		c.JSON(400, gin.H{"error": "Missing customer_id"})
+		return
+	}
+	// แปลง customer_id เป็น integer
+	customerIDInt, err := strconv.Atoi(customerID)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid customer_id"})
+		return
+	}
+
+	// ดึงข้อมูลรถเข็นทั้งหมดของลูกค้า พร้อมกับข้อมูลลูกค้าและรายการสินค้า
+	var carts []model.Cart
+	if err := DB.Preload("Items.Product").Where("customer_id = ?", customerIDInt).Find(&carts).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch carts"})
+		return
+	}
+
+	// สร้างโครงสร้างข้อมูลสำหรับ response
+	type CartItemResponse struct {
+		ProductID    int     `json:"product_id"`
+		ProductName  string  `json:"product_name"`
+		Quantity     int     `json:"quantity"`
+		PricePerUnit float64 `json:"price_per_unit"`
+		TotalPrice   float64 `json:"total_price"`
+	}
+	type CartResponse struct {
+		CartID int                `json:"cart_id"`
+		Name   string             `json:"cart_name"`
+		Items  []CartItemResponse `json:"items"`
+	}
+
+	var cartResponses []CartResponse
+	for _, cart := range carts {
+		var items []CartItemResponse
+		for _, item := range cart.Items {
+			// ตรวจสอบว่ามีข้อมูลสินค้าหรือไม่
+			if item.ProductID == 0 || item.Product.ProductID == 0 {
+				continue // ข้ามรายการที่ไม่มีข้อมูลสินค้า
+			}
+
+			product := item.Product
+			items = append(items, CartItemResponse{
+				ProductID:    product.ProductID,
+				ProductName:  product.ProductName,
+				Quantity:     item.Quantity,
+				PricePerUnit: product.Price,
+				TotalPrice:   float64(item.Quantity) * product.Price,
+			})
+		}
+
+		cartResponses = append(cartResponses, CartResponse{
+			CartID: cart.CartID,
+			Name:   cart.CartName,
+			Items:  items,
+		})
+	}
+
+	// ส่งข้อมูลกลับไปยัง client
+	c.JSON(200, gin.H{"carts": cartResponses})
 }

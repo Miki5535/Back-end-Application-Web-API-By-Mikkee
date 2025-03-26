@@ -6,18 +6,21 @@ import (
 )
 
 type Customer struct {
-	CustomerID  int       `gorm:"column:customer_id;primary_key;AUTO_INCREMENT"`
-	FirstName   string    `gorm:"column:first_name;NOT NULL"`
-	LastName    string    `gorm:"column:last_name;NOT NULL"`
-	Email       string    `gorm:"column:email;NOT NULL"`
-	PhoneNumber string    `gorm:"column:phone_number"`
-	Address     string    `gorm:"column:address"`
-	Password    string    `gorm:"column:password;NOT NULL"`
-	CreatedAt   time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP"`
-	UpdatedAt   time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP"`
+    CustomerID  int       `gorm:"column:customer_id;primary_key;AUTO_INCREMENT"`
+    FirstName   string    `gorm:"column:first_name;NOT NULL"`
+    LastName    string    `gorm:"column:last_name;NOT NULL"`
+    Email       string    `gorm:"column:email;NOT NULL;unique"`
+    PhoneNumber string    `gorm:"column:phone_number"`
+    Address     string    `gorm:"column:address"`
+    Password    string    `gorm:"column:password;NOT NULL"`
+    CreatedAt   time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP"`
+    UpdatedAt   time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP"`
+
+    // ความสัมพันธ์กับ Cart
+    Carts []Cart `gorm:"foreignKey:CustomerID"`
 }
 
 func (m *Customer) TableName() string {
-	return "customer"
+    return "customer"
 }
 
