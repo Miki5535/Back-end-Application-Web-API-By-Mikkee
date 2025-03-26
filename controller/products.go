@@ -17,7 +17,7 @@ func ProductsController(router *gin.Engine) {
 }
 
 func getAllProducts(c *gin.Context) {
-	var products []model.Products
+	var products []model.Product
 	if err := DB.Find(&products).Error; err != nil {
 		c.JSON(500, gin.H{"error": "Failed to fetch products"})
 		return
@@ -26,7 +26,7 @@ func getAllProducts(c *gin.Context) {
 }
 
 func createProduct(c *gin.Context) {
-	var product model.Products
+	var product model.Product
 
 	if err := c.ShouldBindJSON(&product); err != nil {
 		c.JSON(400, gin.H{"error": "Invalid request body"})
@@ -43,7 +43,7 @@ func createProduct(c *gin.Context) {
 
 func updateProduct(c *gin.Context) {
 	id := c.Param("id")
-	var product model.Products
+	var product model.Product
 
 	if err := DB.First(&product, id).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Product not found"})
@@ -65,7 +65,7 @@ func updateProduct(c *gin.Context) {
 
 func deleteProduct(c *gin.Context) {
 	id := c.Param("id")
-	var product model.Products
+	var product model.Product
 
 	if err := DB.First(&product, id).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Product not found"})

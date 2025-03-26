@@ -1,9 +1,6 @@
 
 # ต้อง แทบครั้งเดียว ตรง dsn
 mysql:
-  # dsn : "landmark:landmark@csmsu@tcp(202.28.34.197:3306)/landmark?collation=utf8mb4_unicode_ci&parseTime=true"
+  dsn : "cp_65011212031:65011212031@csmsu@tcp(202.28.34.197:3306)/cp_65011212031?collation=utf8mb4_unicode_ci&parseTime=true"
 
 
-  dsn : "mikkee:123@tcp(localhost:3306)/sales_system?collation=utf8mb4_unicode_ci&parseTime=true"
-
-  # dsn := "username:password@tcp(host:port)/database_name?charset=utf8mb4&parseTime=True&loc=Local"

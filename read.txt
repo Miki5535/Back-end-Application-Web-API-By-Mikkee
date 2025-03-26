@@ -1,0 +1,26 @@
+git add .
+git commit -m "first commit"
+git push -u origin main
+
+
+
+go install github.com/air-verse/air@latest
+air -v
+air
+
+
+
+
+git config --global user.name "Miki5535"
+git config --global user.email "masterfin787@gmail.com"
+
+
+
+
+
+
+
+
+
+
+

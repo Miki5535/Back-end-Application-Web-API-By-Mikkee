@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"go-test-grom-by-mikkee/controller"
-	model "go-test-grom-by-mikkee/models"
 
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
@@ -30,12 +29,7 @@ func main() {
 	}
 	fmt.Println("Connection successful")
 
-	// products := []model.Products{}
-
-	// db.Find(&products)
-	// fmt.Println(products)
-
-	model.MigrateModels(db)
+	// model.MigrateModels(db)
 
 	controller.StartServer(db)
 
