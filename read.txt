@@ -15,12 +15,23 @@ git config --global user.name "Miki5535"
 git config --global user.email "masterfin787@gmail.com"
 
 
+ถ้าต้องการตรวจสอบ remote repository ที่ใช้งานอยู่
+git remote -v
+
+
+ถ้าเจอ repository เก่าที่ไม่ต้องการแล้ว ให้ลบออกก่อน
+git remote remove origin
+
+
+ตรวจสอบสถานะของไฟล์ก่อน push
+git status
 
 
 
 
 
 
+Miki5535/Back-end-Application-Web-API-By-Mikkee
 
 
 
