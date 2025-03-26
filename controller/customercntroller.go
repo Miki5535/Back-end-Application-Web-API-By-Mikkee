@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"go-test-grom-by-mikkee/dto"
 	model "go-test-grom-by-mikkee/models"
 	"strconv"
 
@@ -233,29 +234,14 @@ func getCarts(c *gin.Context) {
 	}
 
 	// สร้างโครงสร้างข้อมูลสำหรับ response
-	type CartItemResponse struct {
-		ProductID    int     `json:"product_id"`
-		ProductName  string  `json:"product_name"`
-		Description  string  `json:"description,omitempty"`
-		Quantity     int     `json:"quantity"`
-		PricePerUnit float64 `json:"price_per_unit"`
-		TotalPrice   float64 `json:"total_price"`
-		// Available    bool    `json:"available"`
-	}
-	type CartResponse struct {
-		CartID int                `json:"cart_id"`
-		Name   string             `json:"cart_name"`
-		Items  []CartItemResponse `json:"items"`
-	}
-
-	var cartResponses []CartResponse
+	var cartResponses []dto.CartResponseDTO
 	for _, cart := range carts {
-		var items []CartItemResponse
+		var items []dto.CartItemResponseDTO
 		for _, item := range cart.Items {
 			// ค้นหาสินค้าใน map
 			product, exists := productMap[item.ProductID]
 
-			responseItem := CartItemResponse{
+			responseItem := dto.CartItemResponseDTO{
 				ProductID: item.ProductID,
 				Quantity:  item.Quantity,
 			}
@@ -264,23 +250,21 @@ func getCarts(c *gin.Context) {
 				responseItem.ProductName = product.ProductName
 				responseItem.Description = product.Description
 				responseItem.PricePerUnit = product.Price
-				// responseItem.TotalPrice = float64(item.Quantity) * product.Price
+				// คำนวณราคา
 				totalPrice := float64(item.Quantity) * product.Price
 				formatted, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", totalPrice), 64)
 				responseItem.TotalPrice = formatted
-				// responseItem.Available = true
 			} else {
 				responseItem.ProductName = "Unknown Product (ID: " + strconv.Itoa(item.ProductID) + ")"
 				responseItem.Description = "This product is no longer available"
 				responseItem.PricePerUnit = 0
 				responseItem.TotalPrice = 0
-				// responseItem.Available = false
 			}
 
 			items = append(items, responseItem)
 		}
 
-		cartResponses = append(cartResponses, CartResponse{
+		cartResponses = append(cartResponses, dto.CartResponseDTO{
 			CartID: cart.CartID,
 			Name:   cart.CartName,
 			Items:  items,

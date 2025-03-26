@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"go-test-grom-by-mikkee/dto"
 	model "go-test-grom-by-mikkee/models"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +26,21 @@ func getAllProducts(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Failed to fetch products"})
 		return
 	}
-	c.JSON(200, products)
+
+	// สร้าง DTO สำหรับแต่ละ Product
+	var productDTOs []dto.ProductDTO
+	for _, product := range products {
+		productDTO := dto.ProductDTO{
+			ProductID:     product.ProductID,
+			ProductName:   product.ProductName,
+			Description:   product.Description,
+			Price:         product.Price,
+			StockQuantity: product.StockQuantity,
+		}
+		productDTOs = append(productDTOs, productDTO)
+	}
+
+	c.JSON(200, productDTOs)
 }
 
 func createProduct(c *gin.Context) {
@@ -41,7 +56,16 @@ func createProduct(c *gin.Context) {
 		return
 	}
 
-	c.JSON(201, product)
+	// สร้าง DTO
+	productDTO := dto.ProductDTO{
+		ProductID:     product.ProductID,
+		ProductName:   product.ProductName,
+		Description:   product.Description,
+		Price:         product.Price,
+		StockQuantity: product.StockQuantity,
+	}
+
+	c.JSON(201, productDTO)
 }
 
 func updateProduct(c *gin.Context) {
@@ -143,6 +167,13 @@ func addProductToCart(c *gin.Context) {
 			c.JSON(500, gin.H{"error": "Failed to add product to cart"})
 			return
 		}
+	}
+
+	// ลดจำนวน stock_quantity ของสินค้าที่ถูกเพิ่มในรถเข็น
+	product.StockQuantity -= input.Quantity
+	if err := DB.Save(&product).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to update product stock"})
+		return
 	}
 
 	c.JSON(200, gin.H{"message": "Product added to cart successfully"})
