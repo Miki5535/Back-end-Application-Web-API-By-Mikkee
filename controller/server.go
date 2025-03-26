@@ -18,4 +18,5 @@ func StartServer(db *gorm.DB) {
 	ProductsController(router)
 	CustomerController(router)
 	router.Run()
+
 }
